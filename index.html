@@ -245,15 +245,20 @@
         pageRendering = true;
         // Get page from document
         pdfDoc.getPage(num).then(function(page) {
-          const viewport = page.getViewport({ scale: scale });
+          const viewport = page.getViewport({ scale: 1.0 });
+          const baseScale = Math.min(
+            (window.innerWidth - 40) / viewport.width,
+            (window.innerHeight - 150) / viewport.height
+          );
           
-          const outputScale = scale * (window.devicePixelRatio || 1);
+          const finalScale = baseScale * scale;
+          const outputScale = finalScale * (window.devicePixelRatio || 1);
           
           const scaledViewport = page.getViewport({ scale: outputScale });
           canvas.width = scaledViewport.width;
           canvas.height = scaledViewport.height;
-          canvas.style.width = viewport.width + 'px';
-          canvas.style.height = viewport.height + 'px';
+          canvas.style.width = Math.floor(viewport.width * finalScale) + 'px';
+          canvas.style.height = Math.floor(viewport.height * finalScale) + 'px';
 
           // Render PDF page into canvas context
           const renderContext = {
