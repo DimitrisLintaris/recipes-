@@ -106,24 +106,29 @@
     }
 
     #pdf-controls {
+      position: fixed;
+      bottom: 20px;
+      left: 50%;
+      transform: translateX(-50%);
       display: flex;
-      gap: 10px;
-      margin-bottom: 20px;
-      padding-top: 20px;
-      flex-wrap: wrap;
-      justify-content: center;
-      align-items: center;
+      gap: 5px;
+      padding: 10px;
+      background: rgba(255, 255, 255, 0.8);
+      border-radius: 12px;
+      box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+      z-index: 101;
     }
 
     #pdf-controls button {
       background-color: #3498db;
       color: white;
       border: none;
-      padding: 10px 20px;
-      border-radius: 8px;
+      padding: 5px 10px;
+      border-radius: 6px;
       cursor: pointer;
       font-weight: bold;
-      transition: background-color 0.3s;
+      font-size: 12px;
+      transition: background-color 0.3s, transform 0.1s;
     }
     
     #home-button {
@@ -141,6 +146,16 @@
 
     #pdf-controls button:hover:enabled {
       background-color: #2980b9;
+      transform: translateY(-2px);
+    }
+    
+    #page-info {
+        font-size: 12px;
+        color: #2c3e50;
+        display: flex;
+        align-items: center;
+        padding: 0 5px;
+        font-weight: bold;
     }
 
     #pdf-loading {
@@ -159,10 +174,11 @@
     #canvas-container {
       overflow-y: auto;
       width: 100%;
-      height: calc(100% - 70px); /* Adjust height to accommodate controls */
+      height: calc(100vh - 100px); /* Adjust height for controls at the bottom */
       display: flex;
       justify-content: center;
       align-items: flex-start;
+      padding-top: 20px;
       padding-bottom: 20px;
     }
   </style>
@@ -223,7 +239,8 @@
             (window.innerHeight - 150) / viewport.height // Adjusted for controls
           );
           
-          const scaledViewport = page.getViewport({ scale: scale });
+          // Increase the scale for better quality
+          const scaledViewport = page.getViewport({ scale: scale * 1.5 });
           canvas.width = scaledViewport.width;
           canvas.height = scaledViewport.height;
 
