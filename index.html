@@ -163,6 +163,16 @@
       color: #7f8c8d;
       margin-top: 20px;
     }
+    
+    #zoom-slider-container {
+      display: flex;
+      align-items: center;
+      gap: 5px;
+    }
+    
+    #zoom-slider {
+      width: 100px;
+    }
 
     #pdf-canvas {
       border: 1px solid #ccc;
@@ -193,6 +203,7 @@
       let pageRendering = false;
       let pageNumPending = null;
       let url = '';
+      let initialScale = 1.5; // Default scale for quality rendering
 
       const canvas = document.getElementById('pdf-canvas');
       const ctx = canvas.getContext('2d');
@@ -206,6 +217,7 @@
       const homeButton = document.getElementById('home-button');
       const boxContainer = document.querySelector('.box-container');
       const header = document.querySelector('h1');
+      const zoomSlider = document.getElementById('zoom-slider');
       
       // Asynchronously downloads PDF.
       function loadAndRenderPDF(pdfUrl) {
@@ -239,10 +251,14 @@
             (window.innerHeight - 150) / viewport.height // Adjusted for controls
           );
           
-          // Increase the scale for better quality
-          const scaledViewport = page.getViewport({ scale: scale * 1.5 });
+          // Use a higher scale factor for rendering to improve quality
+          const outputScale = initialScale * (window.devicePixelRatio || 1);
+          
+          const scaledViewport = page.getViewport({ scale: outputScale });
           canvas.width = scaledViewport.width;
           canvas.height = scaledViewport.height;
+          canvas.style.width = Math.floor(viewport.width * scale) + 'px';
+          canvas.style.height = Math.floor(viewport.height * scale) + 'px';
 
           // Render PDF page into canvas context
           const renderContext = {
@@ -277,7 +293,7 @@
       // Re-render the current page on window resize
       window.onresize = function() {
         if (viewerContainer.style.display === 'flex' && pdfDoc) {
-          queueRenderPage(pageNum);
+          renderPage(pageNum);
         }
       }
 
@@ -305,6 +321,14 @@
         boxContainer.style.display = 'flex';
         header.style.display = 'block';
       }
+      
+      // Event listener for zoom slider
+      zoomSlider.addEventListener('input', function() {
+        initialScale = parseFloat(this.value);
+        if (pdfDoc) {
+            renderPage(pageNum);
+        }
+      });
 
       // Event listeners for navigation buttons
       prevButton.addEventListener('click', onPrevPage);
@@ -363,6 +387,9 @@
       <span id="page-info">Σελίδα: <span id="page-num"></span> / <span id="page-count"></span></span>
       <button id="next">Επόμενη</button>
       <button id="home-button">Home</button>
+      <div id="zoom-slider-container">
+        <input type="range" id="zoom-slider" min="1.0" max="3.0" step="0.1" value="1.5">
+      </div>
     </div>
     <div id="pdf-loading"></div>
     <div id="canvas-container">
