@@ -110,6 +110,9 @@
       gap: 10px;
       margin-bottom: 20px;
       padding-top: 20px;
+      flex-wrap: wrap;
+      justify-content: center;
+      align-items: center;
     }
 
     #pdf-controls button {
@@ -151,6 +154,16 @@
       border-radius: 8px;
       max-width: 100%;
       height: auto;
+    }
+    
+    #canvas-container {
+      overflow-y: auto;
+      width: 100%;
+      height: calc(100% - 70px); /* Adjust height to accommodate controls */
+      display: flex;
+      justify-content: center;
+      align-items: flex-start;
+      padding-bottom: 20px;
     }
   </style>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
@@ -204,13 +217,20 @@
         pageRendering = true;
         // Get page from document
         pdfDoc.getPage(num).then(function(page) {
-          const viewport = page.getViewport({ scale: 1.5 });
-          canvas.width = viewport.width;
-          canvas.height = viewport.height;
+          const viewport = page.getViewport({ scale: 1.0 });
+          const scale = Math.min(
+            (window.innerWidth - 40) / viewport.width,
+            (window.innerHeight - 150) / viewport.height // Adjusted for controls
+          );
+          
+          const scaledViewport = page.getViewport({ scale: scale });
+          canvas.width = scaledViewport.width;
+          canvas.height = scaledViewport.height;
+
           // Render PDF page into canvas context
           const renderContext = {
             canvasContext: ctx,
-            viewport: viewport
+            viewport: scaledViewport
           };
           const renderTask = page.render(renderContext);
           // Wait for rendering to finish
@@ -234,6 +254,13 @@
           pageNumPending = num;
         } else {
           renderPage(num);
+        }
+      }
+      
+      // Re-render the current page on window resize
+      window.onresize = function() {
+        if (viewerContainer.style.display === 'flex' && pdfDoc) {
+          queueRenderPage(pageNum);
         }
       }
 
@@ -321,7 +348,9 @@
       <button id="home-button">Home</button>
     </div>
     <div id="pdf-loading"></div>
-    <canvas id="pdf-canvas"></canvas>
+    <div id="canvas-container">
+      <canvas id="pdf-canvas"></canvas>
+    </div>
   </div>
 </body>
 </html>
