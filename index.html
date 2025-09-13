@@ -89,7 +89,172 @@
     .box-link {
         text-decoration: none; /* Remove underline from links */
     }
+
+    #pdf-viewer-container {
+      margin-top: 40px;
+      display: none; /* Hide by default */
+      flex-direction: column;
+      align-items: center;
+      width: 100%;
+      max-width: 800px;
+      background-color: #fff;
+      border-radius: 15px;
+      box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+      padding: 20px;
+    }
+
+    #pdf-controls {
+      display: flex;
+      gap: 10px;
+      margin-bottom: 20px;
+    }
+
+    #pdf-controls button {
+      background-color: #3498db;
+      color: white;
+      border: none;
+      padding: 10px 20px;
+      border-radius: 8px;
+      cursor: pointer;
+      font-weight: bold;
+      transition: background-color 0.3s;
+    }
+
+    #pdf-controls button:disabled {
+      background-color: #bdc3c7;
+      cursor: not-allowed;
+    }
+
+    #pdf-controls button:hover:enabled {
+      background-color: #2980b9;
+    }
+
+    #pdf-loading {
+      font-size: 18px;
+      color: #7f8c8d;
+    }
+
+    #pdf-canvas {
+      border: 1px solid #ccc;
+      border-radius: 8px;
+      max-width: 100%;
+      height: auto;
+    }
   </style>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+  <script>
+    window.onload = function() {
+      // Set the workerSrc for pdf.js
+      pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+      
+      let pdfDoc = null;
+      let pageNum = 1;
+      let pageRendering = false;
+      let pageNumPending = null;
+      let url = '';
+
+      const canvas = document.getElementById('pdf-canvas');
+      const ctx = canvas.getContext('2d');
+
+      const prevButton = document.getElementById('prev');
+      const nextButton = document.getElementById('next');
+      const pageNumSpan = document.getElementById('page-num');
+      const pageCountSpan = document.getElementById('page-count');
+      const loadingMessage = document.getElementById('pdf-loading');
+      const viewerContainer = document.getElementById('pdf-viewer-container');
+      
+      // Asynchronously downloads PDF.
+      function loadAndRenderPDF(pdfUrl) {
+        loadingMessage.textContent = 'Φόρτωση...';
+        viewerContainer.style.display = 'flex';
+        pdfDoc = null;
+        pageNum = 1;
+        
+        pdfjsLib.getDocument(pdfUrl).promise.then(function(pdf) {
+          pdfDoc = pdf;
+          pageCountSpan.textContent = pdfDoc.numPages;
+          renderPage(pageNum);
+        }).catch(function(error) {
+          console.error('Error loading PDF:', error);
+          loadingMessage.textContent = 'Αποτυχία φόρτωσης. Ελέγξτε τη διεύθυνση του αρχείου.';
+          viewerContainer.style.display = 'flex';
+          pdfDoc = null;
+        });
+      }
+
+      // Get page info from document, resize canvas accordingly, and render page.
+      function renderPage(num) {
+        pageRendering = true;
+        // Get page from document
+        pdfDoc.getPage(num).then(function(page) {
+          const viewport = page.getViewport({ scale: 1.5 });
+          canvas.width = viewport.width;
+          canvas.height = viewport.height;
+          // Render PDF page into canvas context
+          const renderContext = {
+            canvasContext: ctx,
+            viewport: viewport
+          };
+          const renderTask = page.render(renderContext);
+          // Wait for rendering to finish
+          renderTask.promise.then(function() {
+            pageRendering = false;
+            loadingMessage.textContent = '';
+            if (pageNumPending !== null) {
+              // New page rendering is pending
+              renderPage(pageNumPending);
+              pageNumPending = null;
+            }
+          });
+        });
+        // Update page number on the UI
+        pageNumSpan.textContent = num;
+      }
+
+      // If another page rendering in progress, waits until the rendering is finished.
+      function queueRenderPage(num) {
+        if (pageRendering) {
+          pageNumPending = num;
+        } else {
+          renderPage(num);
+        }
+      }
+
+      // Go to previous page
+      function onPrevPage() {
+        if (pageNum <= 1) {
+          return;
+        }
+        pageNum--;
+        queueRenderPage(pageNum);
+      }
+
+      // Go to next page
+      function onNextPage() {
+        if (pageNum >= pdfDoc.numPages) {
+          return;
+        }
+        pageNum++;
+        queueRenderPage(pageNum);
+      }
+
+      // Event listeners for navigation buttons
+      prevButton.addEventListener('click', onPrevPage);
+      nextButton.addEventListener('click', onNextPage);
+      
+      // Get all links with the .box-link class
+      const boxLinks = document.querySelectorAll('.box-link');
+
+      boxLinks.forEach(link => {
+        link.addEventListener('click', function(event) {
+          event.preventDefault(); // Prevent the default link behavior
+          url = this.getAttribute('href');
+          loadAndRenderPDF(url);
+        });
+      });
+    }
+
+  </script>
 </head>
 <body>
   <h1>Συνταγολόγια Παραδοσιακό</h1>
@@ -121,6 +286,16 @@
         </div>
       </div>
     </a>
+  </div>
+  
+  <div id="pdf-viewer-container">
+    <div id="pdf-controls">
+      <button id="prev">Προηγούμενη</button>
+      <span id="page-info">Σελίδα: <span id="page-num"></span> / <span id="page-count"></span></span>
+      <button id="next">Επόμενη</button>
+    </div>
+    <div id="pdf-loading"></div>
+    <canvas id="pdf-canvas"></canvas>
   </div>
 </body>
 </html>
