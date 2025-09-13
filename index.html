@@ -177,8 +177,6 @@
     #pdf-canvas {
       border: 1px solid #ccc;
       border-radius: 8px;
-      max-width: 100%;
-      height: auto;
     }
     
     #canvas-container {
@@ -246,8 +244,9 @@
         // Get page from document
         pdfDoc.getPage(num).then(function(page) {
           const viewport = page.getViewport({ scale: 1.0 });
+          const padding = 40; // Total padding on the sides
           const baseScale = Math.min(
-            (window.innerWidth - 40) / viewport.width,
+            (window.innerWidth - padding) / viewport.width,
             (window.innerHeight - 150) / viewport.height
           );
           
@@ -255,8 +254,12 @@
           const outputScale = finalScale * (window.devicePixelRatio || 1);
           
           const scaledViewport = page.getViewport({ scale: outputScale });
+          
+          // Set internal canvas dimensions for a sharp image
           canvas.width = scaledViewport.width;
           canvas.height = scaledViewport.height;
+
+          // Set canvas CSS dimensions to fit the screen while maintaining aspect ratio
           canvas.style.width = Math.floor(viewport.width * finalScale) + 'px';
           canvas.style.height = Math.floor(viewport.height * finalScale) + 'px';
 
