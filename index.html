@@ -91,22 +91,25 @@
     }
 
     #pdf-viewer-container {
-      margin-top: 40px;
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
       display: none; /* Hide by default */
       flex-direction: column;
       align-items: center;
-      width: 100%;
-      max-width: 800px;
       background-color: #fff;
-      border-radius: 15px;
-      box-shadow: 0 4px 8px rgba(0,0,0,0.1);
-      padding: 20px;
+      padding: 0;
+      box-shadow: none;
+      z-index: 100;
     }
 
     #pdf-controls {
       display: flex;
       gap: 10px;
       margin-bottom: 20px;
+      padding-top: 20px;
     }
 
     #pdf-controls button {
@@ -118,6 +121,14 @@
       cursor: pointer;
       font-weight: bold;
       transition: background-color 0.3s;
+    }
+    
+    #home-button {
+      background-color: #e74c3c;
+    }
+    
+    #home-button:hover {
+      background-color: #c0392b;
     }
 
     #pdf-controls button:disabled {
@@ -132,6 +143,7 @@
     #pdf-loading {
       font-size: 18px;
       color: #7f8c8d;
+      margin-top: 20px;
     }
 
     #pdf-canvas {
@@ -162,9 +174,14 @@
       const pageCountSpan = document.getElementById('page-count');
       const loadingMessage = document.getElementById('pdf-loading');
       const viewerContainer = document.getElementById('pdf-viewer-container');
+      const homeButton = document.getElementById('home-button');
+      const boxContainer = document.querySelector('.box-container');
+      const header = document.querySelector('h1');
       
       // Asynchronously downloads PDF.
       function loadAndRenderPDF(pdfUrl) {
+        boxContainer.style.display = 'none';
+        header.style.display = 'none';
         loadingMessage.textContent = 'Φόρτωση...';
         viewerContainer.style.display = 'flex';
         pdfDoc = null;
@@ -238,9 +255,17 @@
         queueRenderPage(pageNum);
       }
 
+      // Go back to the main page
+      function onHome() {
+        viewerContainer.style.display = 'none';
+        boxContainer.style.display = 'flex';
+        header.style.display = 'block';
+      }
+
       // Event listeners for navigation buttons
       prevButton.addEventListener('click', onPrevPage);
       nextButton.addEventListener('click', onNextPage);
+      homeButton.addEventListener('click', onHome);
       
       // Get all links with the .box-link class
       const boxLinks = document.querySelectorAll('.box-link');
@@ -293,6 +318,7 @@
       <button id="prev">Προηγούμενη</button>
       <span id="page-info">Σελίδα: <span id="page-num"></span> / <span id="page-count"></span></span>
       <button id="next">Επόμενη</button>
+      <button id="home-button">Home</button>
     </div>
     <div id="pdf-loading"></div>
     <canvas id="pdf-canvas"></canvas>
